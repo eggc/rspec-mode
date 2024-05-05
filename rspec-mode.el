@@ -240,6 +240,11 @@ Use shell command `vagrant ssh -c'."
   :type 'boolean
   :group 'rspec-mode)
 
+(defcustom rspec-use-binstub-when-possible nil
+  "When t and `bin/rspec` is present, run specs with the binstub file."
+  :type 'boolean
+  :group 'rspec-mode)
+
 (defcustom rspec-use-opts-file-when-available t
   "When t, RSpec should use .rspec/spec.opts."
   :type 'boolean
@@ -750,6 +755,10 @@ file if it exists, or sensible defaults otherwise."
              ;; 1.5.0+
              (file-exists-p (format "%s/spring-%s/%s.pid" path (user-real-uid) application-id))))))))
 
+(defun rspec-binstub-p ()
+  (and rspec-use-binstub-when-possible
+  (file-executable-p (concat (rspec-project-root) "bin/rspec"))))
+
 (defun rspec2-p ()
   (or (string-match "rspec" rspec-spec-command)
       (file-readable-p (concat (rspec-project-root) ".rspec"))))
@@ -796,9 +805,10 @@ file if it exists, or sensible defaults otherwise."
 (defun rspec-runner ()
   "Return command line to run rspec."
   (let ((bundle-command (if (rspec-bundle-p) "bundle exec " ""))
+        (binstub-command (if (rspec-binstub-p) "bin/" nil))
         (zeus-command (if (rspec-zeus-p) "zeus " nil))
         (spring-command (if (rspec-spring-p) "spring " nil)))
-    (concat (or zeus-command spring-command bundle-command)
+    (concat (or binstub-command zeus-command spring-command bundle-command)
             (if (rspec-rake-p)
                 (concat rspec-rake-command " spec")
               rspec-spec-command))))
